@@ -13,6 +13,7 @@ const RestaurantEdit = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [cookies] = useCookies(['XSRF-TOKEN']);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (id !== 'new') {
@@ -31,25 +32,48 @@ const RestaurantEdit = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    await fetch(`/api/restaurants${restaurant.id ? `/${restaurant.id}` : ''}`, {
-      method: (restaurant.id) ? 'PUT' : 'POST',
-      headers: {
-        'X-XSRF-TOKEN': cookies['XSRF-TOKEN'],
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(restaurant),
-      credentials: 'include'
-    });
+    try {
+      const response = await fetch(`/api/restaurants${restaurant.id ? `/${restaurant.id}` : ''}`, {
+            method: (restaurant.id) ? 'PUT' : 'POST',
+            headers: {
+              'X-XSRF-TOKEN': cookies['XSRF-TOKEN'],
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(restaurant),
+            credentials: 'include'
+          });
+      if (!response.ok) {
+        console.log(response);
+        const dateJson = await response.json()
+        console.log("Response");
+        console.log(dateJson);
+        console.log("Response after");
+        throw new Error(dateJson.message);
+      }
     setRestaurant(initialFormState);
     navigate('/restaurants');
+    } catch (error){
+          setError(error.message);
+          console.log(error);
+          return error;
+    }
   }
 
   const title = <h2>{restaurant.id ? 'Edit Restaurant' : 'Add Restaurant'}</h2>;
 
+  const renderError = () => {
+    return error ? (
+      <div className="alert alert-danger" role="alert">
+        {error}
+      </div>
+    ) : null;
+  };
+
   return (<div>
       <AppNavbar/>
       <Container>
+        {renderError()}
         {title}
         <Form onSubmit={handleSubmit}>
           <FormGroup>

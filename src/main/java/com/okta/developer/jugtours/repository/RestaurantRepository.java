@@ -11,4 +11,6 @@ public interface RestaurantRepository extends JpaRepository<RestaurantEntity, Lo
 
   List<RestaurantEntity> findAllByUserId(String id);
 
+  List<RestaurantEntity> findAllByName(String name);
+
 }

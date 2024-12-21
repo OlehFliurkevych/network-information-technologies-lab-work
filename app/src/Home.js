@@ -52,11 +52,10 @@ const Home = () => {
     <p>Please log in to manage your restaurants.</p>;
 
   const button = authenticated ?
-    <div>
-    <Button color="link"><Link to="/restaurants">Manage Restaurants</Link></Button>
-    <br/>
-    <br/>
-      <Button color="link" onClick={logout}>Logout</Button>
+   <div>
+      <Button size="sm" color="warning" tag={Link} to="/restaurants">Manage restaurants</Button>
+      <Button size="sm" color="primary" tag={Link} to="/events">Manage bookings</Button>
+      <Button size="sm" color="success" tag={Link} to="/events/new">Book table</Button>
     </div> :
     <Button color="primary" onClick={login}>Login</Button>;
 

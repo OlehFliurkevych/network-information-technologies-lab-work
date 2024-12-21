@@ -11,6 +11,7 @@ const RestaurantList = () => {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(undefined);
   const [cookies] = useCookies(['XSRF-TOKEN']);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -37,18 +38,33 @@ const RestaurantList = () => {
   }, [setAuthenticated, setLoading, setUser]);
 
   const remove = async (id) => {
-    await fetch(`/api/restaurants/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-XSRF-TOKEN': cookies['XSRF-TOKEN'],
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      credentials: 'include'
-    }).then(() => {
-      let updatedRestaurants = [...restaurants].filter(i => i.id !== id);
-      setRestaurants(updatedRestaurants);
-    });
+    try {
+          const response = await fetch(`/api/restaurants/${id}`, {
+                                 method: 'DELETE',
+                                 headers: {
+                                   'X-XSRF-TOKEN': cookies['XSRF-TOKEN'],
+                                   'Accept': 'application/json',
+                                   'Content-Type': 'application/json'
+                                 },
+                                 credentials: 'include'
+                               });
+          if (!response.ok) {
+            console.log(response);
+            const dateJson = await response.json()
+            console.log("Response");
+            console.log(dateJson);
+            console.log("Response after");
+            throw new Error(dateJson.message);
+          }
+        response.then(() => {
+                        let updatedRestaurants = [...restaurants].filter(i => i.id !== id);
+                        setRestaurants(updatedRestaurants);
+                      });;
+        } catch (error){
+              setError(error.message);
+              console.log(error);
+              return error;
+        }
   }
 
   if (loading) {
@@ -69,15 +85,23 @@ const RestaurantList = () => {
     </tr>
   });
 
-   const message = <h3>Manage your restaurants!</h3>;
+  const message = user ?
+        <h4>Manage your restaurants, {user.name}!</h4> :
+        <p>Please log in to manage your restaurants.</p>;
+
+  const renderError = () => {
+      return error ? (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      ) : null;
+    };
 
   return (
     <div>
       <AppNavbar/>
       <Container fluid>
-        <div className="float-end">
-          <Button color="success" tag={Link} to="/restaurants/new">Add Restaurant</Button>
-        </div>
+        {renderError()}
         <h3>{message}</h3>
         <Table className="mt-4">
           <thead>
@@ -91,6 +115,10 @@ const RestaurantList = () => {
           {restaurantList}
           </tbody>
         </Table>
+        <ButtonGroup>
+          <Button size="sm" color="success" tag={Link} to="/restaurants/new">Add Restaurant</Button>
+          <Button size="sm" color="primary" tag={Link} to="/events">Book table</Button>
+        </ButtonGroup>
       </Container>
     </div>
   );

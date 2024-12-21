@@ -8,6 +8,8 @@ import RestaurantList from './RestaurantList';
 import RestaurantEdit from './RestaurantEdit';
 import TableList from './TableList';
 import TableEdit from './TableEdit';
+import EventList from './EventList';
+import EventEdit from './EventEdit';
 
 const App = () => {
   return (
@@ -20,6 +22,8 @@ const App = () => {
         <Route path="/restaurants/:id" exact={true} element={<RestaurantEdit/>}/>
         <Route path="/tables" exact={true} element={<TableList/>}/>
         <Route path="/tables/:id" exact={true} element={<TableEdit/>}/>
+        <Route path="/events" exact={true} element={<EventList/>}/>
+        <Route path="/events/:id" exact={true} element={<EventEdit/>}/>
       </Routes>
     </Router>
   )

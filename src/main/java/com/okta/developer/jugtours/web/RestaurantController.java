@@ -1,6 +1,7 @@
 package com.okta.developer.jugtours.web;
 
 import com.okta.developer.jugtours.enums.UserType;
+import com.okta.developer.jugtours.exception.ValidationCustomException;
 import com.okta.developer.jugtours.model.RestaurantEntity;
 import com.okta.developer.jugtours.model.TableEntity;
 import com.okta.developer.jugtours.model.User;
@@ -23,7 +24,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
@@ -75,6 +75,12 @@ public class RestaurantController {
       details.get("name").toString(), details.get("email").toString(), UserType.ADMIN,
       Collections.emptyList(), Collections.emptyList())));
 
+    if (!restaurantRepository.findAllByName(restaurant.getName()).isEmpty()) {
+      throw new ValidationCustomException(String.format(
+        "Restaurant with the same name '%s' have already existed. "
+        + "Please choose another name or use existing restaurant.", restaurant.getName()));
+    }
+
     RestaurantEntity result = restaurantRepository.save(restaurant);
     return ResponseEntity.created(new URI("/api/restaurant/" + result.getId())).body(result);
   }
@@ -101,6 +107,15 @@ public class RestaurantController {
   @DeleteMapping("/{id}")
   public ResponseEntity<?> deleteRestaurant(@PathVariable Long id) {
     log.info("Request to delete restaurant: {}", id);
+
+    final var tables = tableRepository.findAllByRestaurantId(id);
+    final var rest = restaurantRepository.findById(id).get();
+    if (!tables.isEmpty()) {
+      throw new ValidationCustomException(String.format(
+        "Restaurant '%s' can't be deleted. This restaurant contains not deleted tables.",
+        rest.getName()));
+    }
+
     restaurantRepository.deleteById(id);
     return ResponseEntity.ok().build();
   }
@@ -108,42 +123,6 @@ public class RestaurantController {
   @GetMapping("/{restaurantId}/tables")
   public List<TableEntity> tables(@PathVariable("restaurantId") Long id) {
     return tableRepository.findAllByRestaurantId(id);
-  }
-
-  @GetMapping("/{restaurantId}/tables/{id}")
-  ResponseEntity<?> getTable(@PathVariable("restaurantId") Long restaurantId,
-    @PathVariable("id") Long id) {
-    Optional<TableEntity> group = tableRepository.findById(id);
-    return group.map(response -> ResponseEntity.ok().body(response))
-      .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-  }
-
-  @PostMapping("/{restaurantId}/tables")
-  ResponseEntity<TableEntity> createTable(@Valid @RequestBody TableEntity table,
-    @PathParam("restaurantId") Long restaurantId) throws URISyntaxException {
-    log.info("Request to create table: {}", table);
-
-    var restaurant = restaurantRepository.findById(restaurantId).get();
-
-    table.setRestaurant(restaurant);
-    TableEntity result = tableRepository.save(table);
-    return ResponseEntity.created(new URI("/api/tables/" + result.getId())).body(result);
-  }
-
-  @PutMapping("/{restaurantId}/tables")
-  ResponseEntity<TableEntity> updateTable(@Valid @RequestBody TableEntity table,
-    @RequestHeader(name = "restaurantId") Long restaurantId) {
-    log.info("Request to update table: {}", table);
-    TableEntity result = tableRepository.save(table);
-    return ResponseEntity.ok().body(result);
-  }
-
-  @DeleteMapping("/{restaurantId}/tables/{id}")
-  public ResponseEntity<?> deleteTable(@PathVariable("restaurantId") Long restaurantId,
-    @PathVariable("id") Long id) {
-    log.info("Request to delete table: {}", id);
-    tableRepository.deleteById(id);
-    return ResponseEntity.ok().build();
   }
 
 }
